@@ -1,0 +1,49 @@
+service: afya-serverless
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  region: us-east-1
+  environment:
+    MONGODB_URI: ${env:MONGODB_URI, 'mongodb://localhost:27017'}
+    DB_NAME: ${env:DB_NAME, 'afya_db'}
+    SENDER_EMAIL: 'notifications@afya-app.com'
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: '*'
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+          Resource: 'arn:aws:s3:::afya-reports/*'
+
+functions:
+  processSalesReport:
+    handler: functions/process_sales_report.handler
+    events:
+      - schedule: cron(0 0 * * ? *)
+      - httpApi:
+          path: /reports/generate
+          method: post
+    environment:
+      REPORT_BUCKET: 'afya-reports'
+
+  sendOrderNotification:
+    handler: functions/send_order_notification.handler
+    events:
+      - httpApi:
+          path: /notifications/order
+          method: post
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true

@@ -1,0 +1,30 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - DB_NAME=afya_db
+    volumes:
+      - .:/app
+    depends_on:
+      - mongodb
+    networks:
+      - afya-network
+
+  mongodb:
+    image: mongo:5.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - afya-network
+
+networks:
+  afya-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
